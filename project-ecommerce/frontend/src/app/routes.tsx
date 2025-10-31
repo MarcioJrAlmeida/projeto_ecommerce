@@ -5,36 +5,12 @@ import {
   Navigate,
 } from 'react-router-dom';
 
-/**
- * Para manter este arquivo auto-contido (e evitar imports de páginas que ainda não existem),
- * uso componentes mínimos in-line como fallbacks. Depois podemos trocar por imports reais.
- */
+// Páginas reais (lazy)
+const Home = lazy(() => import('@/pages/Home'));
+const Catalog = lazy(() => import('@/pages/Catalog'));
+const ProductDetails = lazy(() => import('@/pages/ProductDetails'));
 
-// Lazy placeholders (você poderá substituir por arquivos reais, ex.: `lazy(() => import('@/pages/Home'))`)
-const Home = lazy(async () => ({
-  default: () => (
-    <Page title="Home">
-      <p>Bem-vindo(a) ao E-commerce. 🚀</p>
-    </Page>
-  ),
-}));
-
-const Catalog = lazy(async () => ({
-  default: () => (
-    <Page title="Catálogo">
-      <p>Lista de produtos com filtros virá aqui.</p>
-    </Page>
-  ),
-}));
-
-const ProductDetails = lazy(async () => ({
-  default: () => (
-    <Page title="Produto">
-      <p>Detalhes do produto selecionado.</p>
-    </Page>
-  ),
-}));
-
+// Placeholders temporários (substituiremos quando criarmos as páginas)
 const Cart = lazy(async () => ({
   default: () => (
     <Page title="Carrinho">
@@ -66,7 +42,7 @@ function Page({
   children?: React.ReactNode;
 }) {
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24, maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ margin: 0 }}>{title}</h1>
         <p style={{ margin: '8px 0 0', opacity: 0.7 }}>
@@ -124,16 +100,6 @@ const router = createBrowserRouter([
   { path: '*', element: <NotFound /> },
 ]);
 
-/**
- * Componente raiz de rotas.
- * Depois, no `src/main.tsx`, você poderá trocar o conteúdo atual por:
- *
- *   createRoot(root).render(
- *     <StrictMode>
- *       <AppRoutes />
- *     </StrictMode>
- *   );
- */
 export default function AppRoutes() {
   return <RouterProvider router={router} />;
 }
