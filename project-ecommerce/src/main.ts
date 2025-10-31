@@ -5,7 +5,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ 
+      whitelist: true, 
+      transform: true,
+      transformOptions:  { enableImplicitConversion: true }
+    })
+  );
 
   const config = new DocumentBuilder()
     .setTitle('Ecommerce API')
@@ -14,15 +20,16 @@ async function bootstrap() {
     .build();
 
   app.enableCors({
-    origin: ['http://localhost:5173'], // Vite
-    methods: 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    credentials: false,
+    origin: 'http://localhost:5173',
+    credentials: true,
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization'],
   });
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(3000);
+  await app.listen(Number(process.env.PORT ?? 3000), '0.0.0.0');
 }
 bootstrap();
 
