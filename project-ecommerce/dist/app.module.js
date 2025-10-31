@@ -8,16 +8,35 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
+const typeorm_1 = require("@nestjs/typeorm");
+const categories_module_1 = require("./modules/categories/categories.module");
+const products_module_1 = require("./modules/products/products.module");
+const customers_module_1 = require("./modules/customers/customers.module");
+const addresses_module_1 = require("./modules/addresses/addresses.module");
+const orders_module_1 = require("./modules/orders/orders.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        imports: [
+            typeorm_1.TypeOrmModule.forRoot({
+                type: 'mysql',
+                host: 'localhost',
+                port: 3306,
+                username: 'root',
+                password: 'root@123',
+                database: 'ecommerce',
+                entities: [__dirname + '/**/*.entity{.ts,.js}'],
+                synchronize: true,
+                autoLoadEntities: true,
+            }),
+            categories_module_1.CategoriesModule,
+            products_module_1.ProductsModule,
+            customers_module_1.CustomersModule,
+            addresses_module_1.AddressesModule,
+            orders_module_1.OrdersModule
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
