@@ -1,24 +1,13 @@
 import { http } from '@/lib/http';
 
-/** Tipos mínimos para começarmos (podemos extrair depois para `types.ts`) */
-export type Category = {
-  id: number;
-  name: string;
-  slug?: string;
-  active?: boolean;
-};
-
 export type Product = {
   id: number;
   name: string;
-  slug?: string;
-  description?: string;
   price: number;
-  active: boolean;
-  sku?: string;
   imageUrl?: string | null;
-  category?: Category | null;
-  categoryId?: number | null;
+  description?: string | null;
+  category?: string | null; // simples: string
+  sku?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -30,54 +19,56 @@ export type Paged<T> = {
   limit: number;
 };
 
-export type ProductSort =
-  | 'name.asc'
-  | 'name.desc'
-  | 'price.asc'
-  | 'price.desc'
-  | 'createdAt.desc'
-  | 'createdAt.asc';
-
 export type ProductQuery = {
   search?: string;
-  categoryId?: number;
-  minPrice?: number;
-  maxPrice?: number;
-  active?: boolean;
-  page?: number;   // 1-based
-  limit?: number;  // items per page
-  sort?: ProductSort;
+  page?: number;
+  limit?: number;
+  sort?: 'createdAt.desc' | 'createdAt.asc' | 'price.asc' | 'price.desc' | 'name.asc' | 'name.desc';
 };
 
-/** Lista de produtos com paginação/filters */
-export async function listProducts(
-  query: ProductQuery = {}
-): Promise<Paged<Product>> {
-  const params = {
+export type ProductInput = {
+  name: string;
+  price: number;
+  category?: string;
+  imageUrl?: string;
+  description?: string;
+  sku?: string;
+};
+
+function prune<T extends Record<string, unknown>>(obj: T) {
+  const o: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined && v !== null && v !== '') o[k] = v;
+  }
+  return o;
+}
+
+export async function listProducts(query: ProductQuery = {}): Promise<Paged<Product>> {
+  const params = prune({
     page: query.page ?? 1,
     limit: query.limit ?? 12,
-    sort: query.sort ?? 'createdAt.desc',
     search: query.search,
-    categoryId: query.categoryId,
-    minPrice: query.minPrice,
-    maxPrice: query.maxPrice,
-    active: query.active,
-  };
-
+    sort: query.sort,
+  });
   const { data } = await http.get<Paged<Product>>('/products', { params });
   return data;
 }
 
-/** Detalhe de um produto */
 export async function getProduct(id: number | string): Promise<Product> {
   const { data } = await http.get<Product>(`/products/${id}`);
   return data;
 }
 
-/** Utilitário opcional: formata query padrão (útil para páginas) */
-export const defaultProductQuery = (overrides: Partial<ProductQuery> = {}): ProductQuery => ({
-  page: 1,
-  limit: 12,
-  sort: 'createdAt.desc',
-  ...overrides,
-});
+export async function createProduct(payload: ProductInput): Promise<Product> {
+  const { data } = await http.post<Product>('/products', payload);
+  return data;
+}
+
+export async function updateProduct(id: number, payload: ProductInput): Promise<Product> {
+  const { data } = await http.put<Product>(`/products/${id}`, payload);
+  return data;
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  await http.delete(`/products/${id}`);
+}
