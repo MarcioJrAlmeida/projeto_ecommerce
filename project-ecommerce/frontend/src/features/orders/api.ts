@@ -180,11 +180,9 @@ export async function deleteOrderApi(id: number) {
     });
     return res.status;
   } catch (err) {
-    // fallback: alguns backends implementam remoção via POST/PUT (não ideal, mas comum)
-    // se o seu tiver algo como /orders/:id/delete, descomente:
     // const res = await http.post(`/orders/${id}/delete`, {});
     // return res.status;
-    throw err;
+    // throw err;
   }
 }
 

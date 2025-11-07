@@ -5,6 +5,8 @@ import type { ProductQuery, Product } from '@/features/products/api';
 import { useAuth } from '@/features/auth/store';
 import { ProductForm } from '@/features/products/components/ProductForm';
 import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '@/features/products/hooks';
+import { useCart } from '@/app/cart/useCart'; // ⬅️ novo
+
 
 /** Formata preço em BRL */
 function formatBRL(v: number) {
@@ -32,6 +34,8 @@ function useDebounced<T>(value: T, delay = 400) {
 export default function Catalog() {
   const { user } = useAuth();
   const isAdmin = user?.username === 'admin';
+  const { add } = useCart();
+
 
   // filtros locais (mantidos)
   const [search, setSearch] = useState('');
@@ -245,6 +249,10 @@ function Grid({
     );
   }
 
+  function add(arg0: { productId: number; name: string; price: number; imageUrl: string | null; }, arg1: number) {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <div
       style={{
@@ -284,9 +292,27 @@ function Grid({
             <Link to={`/product/${p.id}`} className="btn" style={{ textAlign: 'center', flex: 1 }}>
               Ver detalhes
             </Link>
-            <button className="btn" style={{ flex: 1 }} onClick={() => alert(`Adicionar ao carrinho: ${p.name}`)}>
+            <button
+              className="btn"
+              onClick={() => {
+                // mapeia com segurança (string→number)
+                const price =
+                  typeof p.price === 'number' ? p.price : Number(String(p.price).replace(',', '.')) || 0;
+
+                add(
+                  {
+                    productId: p.id,
+                    name: p.name ?? `Produto ${p.id}`,
+                    price,
+                    imageUrl: p.imageUrl ?? p.imageUrl ?? null,
+                  },
+                  1
+                );
+              }}
+            >
               Adicionar
             </button>
+
 
             {/* Ações de admin */}
             {isAdmin && (
