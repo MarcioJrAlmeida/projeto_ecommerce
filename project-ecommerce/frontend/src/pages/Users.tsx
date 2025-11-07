@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import {
   useUsers,
   useCreateUser,
@@ -6,6 +8,9 @@ import {
   useDeleteUser,
 } from '@/features/users/hooks';
 import type { User, UserInput, UserQuery } from '@/features/users/api';
+
+import { useOrders } from '@/features/orders/hooks';
+import type { Order } from '@/features/orders/api';
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
@@ -16,10 +21,14 @@ export default function UsersPage() {
     () => ({ search: search || undefined, page, limit }),
     [search, page, limit]
   );
+
   const { data, isLoading, isFetching, error } = useUsers(q);
 
   const [openForm, setOpenForm] =
     useState<null | { mode: 'create' } | { mode: 'edit'; user: User }>(null);
+
+  // Modal de pedidos do usuário
+  const [openOrders, setOpenOrders] = useState<null | { user: User }>(null);
 
   const createMut = useCreateUser();
   const updateMut = useUpdateUser();
@@ -106,6 +115,16 @@ export default function UsersPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 8 }}>
+                  {/* Ver pedidos do usuário */}
+                  <button
+                    className="btn"
+                    title="Pedidos do usuário"
+                    onClick={() => setOpenOrders({ user: u })}
+                    style={{ width: 40, minWidth: 40, padding: 8 }}
+                  >
+                    <OrdersIcon />
+                  </button>
+
                   <button
                     className="btn"
                     title="Editar"
@@ -136,7 +155,11 @@ export default function UsersPage() {
           </div>
 
           <footer
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
           >
             <small style={{ opacity: 0.7 }}>
               {total} usuário(s) {isFetching && '• atualizando…'}
@@ -146,6 +169,7 @@ export default function UsersPage() {
         </>
       )}
 
+      {/* Modal de formulário (criar/editar) */}
       {openForm && (
         <Modal onClose={() => setOpenForm(null)}>
           <UserForm
@@ -171,6 +195,16 @@ export default function UsersPage() {
               }
               setOpenForm(null);
             }}
+          />
+        </Modal>
+      )}
+
+      {/* Modal de pedidos por usuário */}
+      {openOrders && (
+        <Modal onClose={() => setOpenOrders(null)}>
+          <UserOrders
+            userId={openOrders.user.id}
+            username={openOrders.user.username}
           />
         </Modal>
       )}
@@ -240,6 +274,87 @@ function UserForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/* ---------- Modal de Pedidos por Usuário ---------- */
+function UserOrders({ userId, username }: { userId: number; username: string }) {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  // usa o filtro userId → o api.ts mapeia também como customerId
+  const { data, isLoading, error, isFetching } = useOrders({
+    page,
+    limit,
+    userId,
+  });
+
+  const total = data?.total ?? 0;
+  const items = data?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <h3 style={{ margin: 0 }}>Pedidos de {username}</h3>
+
+      {error && (
+        <div className="card" role="alert" style={{ borderColor: '#dc2626' }}>
+          Falha ao carregar pedidos.
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="card">Carregando…</div>
+      ) : items.length === 0 ? (
+        <div className="card">Nenhum pedido encontrado.</div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {items.map((o: Order) => (
+              <div
+                key={o.id}
+                className="card"
+                onClick={() => navigate(`/orders/${o.id}`)}
+                style={{ display: 'grid', gap: 4, cursor: 'pointer' }}
+                title="Ver detalhes do pedido"
+              >
+                <div>
+                  <strong>#{o.id}</strong> {o.code ? `• ${o.code}` : ''}
+                </div>
+                <div style={{ opacity: 0.8, fontSize: 12 }}>
+                  Status: {o.status} • Total:{' '}
+                  {typeof o.total === 'number'
+                    ? new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(o.total)
+                    : '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <small style={{ opacity: 0.75 }}>
+              {total} pedido(s) {isFetching && '• atualizando…'}
+            </small>
+            <Pagination
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+            />
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -331,7 +446,6 @@ function PencilIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
 function CloseIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" {...props}>
@@ -340,6 +454,23 @@ function CloseIcon(props: React.SVGProps<SVGSVGElement>) {
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function OrdersIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" {...props}>
+      <path
+        d="M7 4h10a2 2 0 0 1 2 2v13l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2h2z"
+        fill="currentColor"
+        opacity=".15"
+      />
+      <path
+        d="M7 4h10a2 2 0 0 1 2 2v13l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2h2z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
       />
     </svg>
   );

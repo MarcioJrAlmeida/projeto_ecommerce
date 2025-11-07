@@ -17,6 +17,9 @@ const ProductDetails = lazy(() => import('@/pages/ProductDetails'));
 const Login = lazy(() => import('@/pages/Login'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const UsersPage = lazy(() => import('@/pages/Users')); // ⬅️ NOVO
+const OrdersPage = lazy(() => import('@/pages/Orders'));        // se já existir
+const OrderDetailsPage = lazy(() => import('@/pages/OrderDetails')); // ⬅️ NOVO
+
 
 // Placeholders temporários (substituiremos quando criarmos as páginas)
 const Cart = lazy(async () => ({
@@ -164,6 +167,9 @@ const router = createBrowserRouter([
       { path: '/cart', element: <Cart /> },
       { path: '/home', element: <Navigate to="/" replace /> },
       { path: '*', element: <NotFound /> },
+      { path: '/orders', element: <OrdersPage /> },           // se ainda não estiver
+      { path: '/orders/:id', element: <OrderDetailsPage /> }, // ⬅️ NOVA ROTA
+
     ],
   },
 ]);
