@@ -14,10 +14,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersController = void 0;
 const common_1 = require("@nestjs/common");
+const order_dto_1 = require("../../dto/order.dto");
 const orders_service_1 = require("./orders.service");
 let OrdersController = class OrdersController {
-    constructor(ordersService) {
+    constructor(ordersService, service) {
         this.ordersService = ordersService;
+        this.service = service;
     }
     async findAll(page, limit, status, search, customerId) {
         return this.ordersService.findAll({
@@ -27,6 +29,27 @@ let OrdersController = class OrdersController {
             search: search || undefined,
             customerId: customerId ? Number(customerId) : undefined, // 👈 aplica filtro
         });
+    }
+    get(id) {
+        return this.service.get(id);
+    }
+    create(dto) {
+        return this.service.create(dto);
+    }
+    addItem(id, dto) {
+        return this.service.addItem(id, dto);
+    }
+    updateItem(orderId, itemId, dto) {
+        return this.service.updateItem(orderId, itemId, dto);
+    }
+    removeItem(orderId) {
+        return this.service.removeItem(orderId);
+    }
+    changeStatus(id, dto) {
+        return this.service.setStatus(id, dto.status);
+    }
+    pay(id) {
+        return this.service.pay(id);
     }
 };
 exports.OrdersController = OrdersController;
@@ -41,8 +64,62 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "get", null);
+__decorate([
+    (0, common_1.Post)(),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [order_dto_1.CreateOrderDto]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)(':id/items'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, order_dto_1.AddItemDto]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "addItem", null);
+__decorate([
+    (0, common_1.Put)(':orderId/items/:itemId'),
+    __param(0, (0, common_1.Param)('orderId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Param)('itemId', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, order_dto_1.UpdateItemDto]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "updateItem", null);
+__decorate([
+    (0, common_1.Delete)(':id/items/'),
+    __param(0, (0, common_1.Param)('orderId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "removeItem", null);
+__decorate([
+    (0, common_1.Put)(':id/status'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, order_dto_1.ChangeStatusDto]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "changeStatus", null);
+__decorate([
+    (0, common_1.Post)(':id/pay'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "pay", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
-    __metadata("design:paramtypes", [orders_service_1.OrdersService])
+    __metadata("design:paramtypes", [orders_service_1.OrdersService,
+        orders_service_1.OrderService])
 ], OrdersController);
 //# sourceMappingURL=orders.controller.js.map

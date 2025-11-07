@@ -9,37 +9,52 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegisterDto = void 0;
+exports.UpdateCustomerDto = exports.CreateCustomerDto = void 0;
 const class_validator_1 = require("class-validator");
-class RegisterDto {
+class CreateCustomerDto {
 }
-exports.RegisterDto = RegisterDto;
+exports.CreateCustomerDto = CreateCustomerDto;
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(150),
     __metadata("design:type", String)
-], RegisterDto.prototype, "name", void 0);
+], CreateCustomerDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.MaxLength)(150),
     __metadata("design:type", String)
-], RegisterDto.prototype, "email", void 0);
+], CreateCustomerDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(20),
     __metadata("design:type", String)
-], RegisterDto.prototype, "phone", void 0);
+], CreateCustomerDto.prototype, "phone", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(255),
     __metadata("design:type", String)
-], RegisterDto.prototype, "address", void 0);
+], CreateCustomerDto.prototype, "address", void 0);
+class UpdateCustomerDto {
+}
+exports.UpdateCustomerDto = UpdateCustomerDto;
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6),
-    (0, class_validator_1.MaxLength)(72),
+    (0, class_validator_1.MaxLength)(150),
     __metadata("design:type", String)
-], RegisterDto.prototype, "password", void 0);
+], UpdateCustomerDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.MaxLength)(150),
+    __metadata("design:type", String)
+], UpdateCustomerDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(20),
+    __metadata("design:type", String)
+], UpdateCustomerDto.prototype, "phone", void 0);
 //# sourceMappingURL=customer.dto.js.map

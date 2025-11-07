@@ -7,9 +7,9 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');   // ainda não persiste no back
-  const [password, setPassword] = useState(''); // ainda não persiste no back
-  const [confirm, setConfirm] = useState('');   // ainda não persiste no back
+  const [address, setAddress] = useState('');   
+  const [password, setPassword] = useState(''); 
+  const [confirm, setConfirm] = useState('');   
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e: FormEvent) {
@@ -76,8 +76,8 @@ export default function Register() {
           </label>
         </div>
 
-        <small style={{ opacity: 0.7 }}>
-          * No backend atual, apenas nome, e-mail e telefone são salvos. Endereço e senha exigem ajustes no servidor.
+        <small style={{textAlign: 'center', opacity: 0.7 }}>
+          Salvar o seu Cadastro.
         </small>
 
         <button className="btn" type="submit" disabled={submitting} style={{ width: '100%' }}>

@@ -21,7 +21,7 @@ exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([Order_1.Order, OrderItem_1.OrderItem, Product_1.Product, Customer_1.Customer])],
-        providers: [orders_service_1.OrdersService],
+        providers: [orders_service_1.OrdersService, orders_service_1.OrderService],
         controllers: [orders_controller_1.OrdersController],
     })
 ], OrdersModule);

@@ -16,7 +16,6 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const bcrypt = require("bcrypt");
 const Customer_1 = require("../../entity/Customer");
 const Address_1 = require("../../entity/Address");
 let AuthService = class AuthService {
@@ -28,12 +27,12 @@ let AuthService = class AuthService {
         const exists = await this.customersRepo.findOne({ where: { email: dto.email } });
         if (exists)
             throw new common_1.ConflictException('E-mail já cadastrado.');
-        const passwordHash = await bcrypt.hash(dto.password, 10);
+        // const passwordHash = await bcrypt.hash(dto.password, 10);
         const customer = this.customersRepo.create({
             name: dto.name,
             email: dto.email,
             phone: dto.phone,
-            passwordHash,
+            // passwordHash,
         });
         const saved = await this.customersRepo.save(customer);
         if (dto.address) {

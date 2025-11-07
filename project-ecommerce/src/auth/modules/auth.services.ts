@@ -17,13 +17,13 @@ export class AuthService {
     const exists = await this.customersRepo.findOne({ where: { email: dto.email } });
     if (exists) throw new ConflictException('E-mail já cadastrado.');
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    // const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const customer = this.customersRepo.create({
       name: dto.name,
       email: dto.email,
       phone: dto.phone,
-      passwordHash,
+      // passwordHash,
     });
 
     const saved = await this.customersRepo.save(customer);

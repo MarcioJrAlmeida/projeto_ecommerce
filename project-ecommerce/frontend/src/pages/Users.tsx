@@ -58,7 +58,7 @@ export default function UsersPage() {
                 <th style={{ padding: '12px 16px' }}>ID</th>
                 <th style={{ padding: '12px 16px' }}>Nome</th>
                 <th style={{ padding: '12px 16px' }}>E-mail</th>
-                <th style={{ padding: '12px 16px' }}>Telefone</th>
+                {/* <th style={{ padding: '12px 16px' }}>Telefone</th> */}
                 <th style={{ padding: '12px 16px' }}>Criado</th>
                 <th style={{ padding: '12px 16px' }} />
               </tr>
@@ -67,9 +67,9 @@ export default function UsersPage() {
               {users.map((u) => (
                 <tr key={u.id} style={{ borderTop: '1px solid var(--muted)' }}>
                   <td style={{ padding: '12px 16px' }}>{u.id}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.name}</td>
+                  <td style={{ padding: '12px 16px' }}>{u.username}</td>
                   <td style={{ padding: '12px 16px' }}>{u.email}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.phone || '—'}</td>
+                  {/* <td style={{ padding: '12px 16px' }}>{u. || '—'}</td> */}
                   <td style={{ padding: '12px 16px' }}>
                     {u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}
                   </td>
@@ -113,7 +113,7 @@ function OrdersDialog({ user, onClose }: { user: User; onClose: () => void }) {
   const { data, isLoading, error } = useOrders({
     page,
     limit,
-    customerId: user.id,
+    userId: user.id,
   });
 
   const items = data?.items ?? [];
@@ -145,7 +145,7 @@ function OrdersDialog({ user, onClose }: { user: User; onClose: () => void }) {
         style={{ width: 'min(860px, 96vw)', padding: 16, display: 'grid', gap: 12 }}
       >
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0 }}>Pedidos de {user.name} (ID {user.id})</h3>
+          <h3 style={{ margin: 0 }}>Pedidos de {user.username} (ID {user.id})</h3>
           <button className="btn" onClick={onClose} aria-label="Fechar">Fechar</button>
         </header>
 

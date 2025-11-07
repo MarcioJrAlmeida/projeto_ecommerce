@@ -3,9 +3,9 @@ import { http } from '@/lib/http';
 /** ===== Tipos usados pela UI (mantidos) ===== */
 export type User = {
   id: number;
-  username: string;            // mapeado de customer.name || customer.username
+  username: string;            
   email?: string | null;
-  role?: string | null;        // se o back não tiver, deixamos null
+  role?: string | null;        
   createdAt?: string;
   updatedAt?: string;
 };
