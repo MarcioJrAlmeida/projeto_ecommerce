@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useProducts } from '@/features/products/hooks';
 import type { ProductQuery, Product } from '@/features/products/api';
 import { useAuth } from '@/features/auth/store';
-import { ProductForm } from '@/features/products/ProductForm';
+import { ProductForm } from '@/features/products/components/ProductForm';
 import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '@/features/products/hooks';
 
 /** Formata preço em BRL */

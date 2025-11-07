@@ -16,6 +16,7 @@ const Catalog = lazy(() => import('@/pages/Catalog'));
 const ProductDetails = lazy(() => import('@/pages/ProductDetails'));
 const Login = lazy(() => import('@/pages/Login'));
 const Profile = lazy(() => import('@/pages/Profile'));
+const UsersPage = lazy(() => import('@/pages/Users')); // ⬅️ NOVO
 
 // Placeholders temporários (substituiremos quando criarmos as páginas)
 const Cart = lazy(async () => ({
@@ -62,7 +63,7 @@ function Page({
   );
 }
 
-/** ⬇️ Novo: Layout raiz com SEU header original (dentro do Router) */
+/** Layout raiz com seu header original (dentro do Router) */
 function RootLayout() {
   const { theme, toggleTheme } = useTheme();
   const year = new Date().getFullYear();
@@ -95,6 +96,7 @@ function RootLayout() {
           </strong>
           <div style={{ display: 'flex', gap: 8 }}>
             <Link to="/catalog" className="btn">Catálogo</Link>
+            <Link to="/users" className="btn">Usuários</Link> {/* ⬅️ NOVO item no menu */}
             <Link to="/cart" className="btn">Carrinho</Link>
             <button className="btn" onClick={toggleTheme} aria-label="Alternar tema">
               {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
@@ -130,23 +132,16 @@ const router = createBrowserRouter([
   {
     element: <RootLayout />, // <-- Tudo abaixo fica DENTRO do Router + seu header
     children: [
-      {
-        path: '/',
-        element: <Home />,
-      },
-      {
-        path: '/catalog',
-        element: <Catalog />,
-      },
-      {
-        path: '/product/:id',
-        element: <ProductDetails />,
-      },
+      { path: '/', element: <Home /> },
+      { path: '/catalog', element: <Catalog /> },
+      { path: '/product/:id', element: <ProductDetails /> },
+
       // público
-      {
-        path: '/login',
-        element: <Login />,
-      },
+      { path: '/login', element: <Login /> },
+
+      // página de usuários (sem guardas, como você pediu)
+      { path: '/users', element: <UsersPage /> }, // ⬅️ NOVA ROTA
+
       // protegidas
       {
         path: '/profile',
@@ -164,11 +159,9 @@ const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
+
       // outros
-      {
-        path: '/cart',
-        element: <Cart />,
-      },
+      { path: '/cart', element: <Cart /> },
       { path: '/home', element: <Navigate to="/" replace /> },
       { path: '*', element: <NotFound /> },
     ],
