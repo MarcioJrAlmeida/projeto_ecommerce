@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useProducts } from '@/features/products/hooks';
 import type { ProductQuery, Product } from '@/features/products/api';
 import { useAuth } from '@/features/auth/store';
 import { ProductForm } from '@/features/products/components/ProductForm';
 import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '@/features/products/hooks';
-import { useCart } from '@/app/cart/useCart'; // ⬅️ novo
-
+import { useCart } from '@/app/cart/useCart';
 
 /** Formata preço em BRL */
 function formatBRL(v: number) {
@@ -34,10 +33,14 @@ function useDebounced<T>(value: T, delay = 400) {
 export default function Catalog() {
   const { user } = useAuth();
   const isAdmin = user?.username === 'admin';
-  const { add } = useCart();
 
+  // Cart
+  const { add: addCart } = useCart();
 
-  // filtros locais (mantidos)
+  // Navegação para detalhes
+  const navigate = useNavigate();
+
+  // filtros locais
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<ProductQuery['sort']>('createdAt.desc');
   const [limit, setLimit] = useState(12);
@@ -46,16 +49,16 @@ export default function Catalog() {
   const debouncedSearch = useDebounced(search, 500);
 
   // estado do modal/edição
-  const [openForm, setOpenForm] = useState<null | { mode: 'create' } | { mode: 'edit'; product: Product }>(null);
+  const [openForm, setOpenForm] =
+    useState<null | { mode: 'create' } | { mode: 'edit'; product: Product }>(null);
 
-  // query param estável (mantido)
+  // query param estável
   const query = useMemo<ProductQuery>(() => {
     return {
       page,
       limit,
       sort,
       search: debouncedSearch || undefined,
-      // categoryId, minPrice, maxPrice, active podem ser adicionados depois
     };
   }, [page, limit, sort, debouncedSearch]);
 
@@ -64,21 +67,70 @@ export default function Catalog() {
   const items = data?.items ?? [];
   const totalPages = Math.max(1, Math.ceil(total / (query.limit ?? 12)));
 
-  // mutações CRUD (somente se admin usar)
+  // mutações CRUD
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const deleteMutation = useDeleteProduct();
 
-  // quando mudar filtros, volta pra 1 (mantido)
+  // quando mudar filtros, volta pra 1
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, sort, limit]);
 
+  // handlers passados ao Grid
+  function handleDetails(id: number) {
+    navigate(`/product/${id}`);
+  }
+
+  function handleAddToCart(p: Product) {
+    const price =
+      typeof p.price === 'number'
+        ? p.price
+        : Number(String(p.price ?? '').replace(',', '.')) || 0;
+
+    addCart(
+      {
+        productId: p.id,
+        name: p.name ?? `Produto ${p.id}`,
+        price,
+        imageUrl: p.imageUrl ?? null,
+      },
+      1
+    );
+  }
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <header style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 style={{ margin: 0 }}>Catálogo</h2>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <header
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 12,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <h2 style={{ margin: 0 }}>Catálogo</h2>
+          {user?.username && (
+            <small style={{ opacity: 0.7 }}>
+              • logado como <strong>{user.username}</strong>
+            </small>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Acesso rápido às páginas de Orders e Users */}
+          <Link to="/orders" className="btn">Pedidos</Link>
+          {isAdmin && <Link to="/users" className="btn">Usuários</Link>}
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -142,14 +194,15 @@ export default function Catalog() {
               + Adicionar produto
             </button>
           )}
-
         </div>
       </header>
 
       {error ? (
         <div className="card" role="alert" style={{ borderColor: '#dc2626' }}>
           <strong>Erro:</strong>{' '}
-          {(error as any)?.response?.data?.message || (error as Error).message || 'Falha ao buscar produtos.'}
+          {(error as any)?.response?.data?.message ||
+            (error as Error).message ||
+            'Falha ao buscar produtos.'}
         </div>
       ) : null}
 
@@ -160,6 +213,8 @@ export default function Catalog() {
           <Grid
             items={items}
             isAdmin={isAdmin}
+            onDetails={handleDetails}
+            onAdd={handleAddToCart}
             onEdit={(p) => setOpenForm({ mode: 'edit', product: p })}
             onDelete={async (p) => {
               if (!confirm(`Excluir "${p.name}"?`)) return;
@@ -216,7 +271,10 @@ export default function Catalog() {
               onCancel={() => setOpenForm(null)}
               onSubmit={async (payload) => {
                 try {
-                  await updateMutation.mutateAsync({ id: openForm.product.id, data: payload });
+                  await updateMutation.mutateAsync({
+                    id: openForm.product.id,
+                    data: payload,
+                  });
                   setOpenForm(null);
                 } catch (e: any) {
                   alert(e?.message || 'Falha ao salvar produto.');
@@ -233,11 +291,15 @@ export default function Catalog() {
 function Grid({
   items,
   isAdmin,
+  onDetails,
+  onAdd,
   onEdit,
   onDelete,
 }: {
   items: Product[];
   isAdmin: boolean;
+  onDetails: (id: number) => void;
+  onAdd: (p: Product) => void;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
 }) {
@@ -247,10 +309,6 @@ function Grid({
         Nada por aqui ainda.
       </div>
     );
-  }
-
-  function add(arg0: { productId: number; name: string; price: number; imageUrl: string | null; }, arg1: number) {
-    throw new Error('Function not implemented.');
   }
 
   return (
@@ -276,7 +334,11 @@ function Grid({
             }}
           >
             {p.imageUrl ? (
-              <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img
+                src={p.imageUrl}
+                alt={p.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             ) : (
               'Sem imagem'
             )}
@@ -284,39 +346,41 @@ function Grid({
 
           <header>
             <h3 style={{ margin: 0, fontSize: 16, lineHeight: 1.3 }}>{p.name}</h3>
-            {typeof p.price === 'number' && <div style={{ marginTop: 4, opacity: 0.85 }}>{formatBRL(p.price)}</div>}
-            {p.category ? <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>Categoria: {p.category}</div> : null}
+            {typeof p.price !== 'undefined' && (
+              <div style={{ marginTop: 4, opacity: 0.85 }}>
+                {formatBRL(
+                  typeof p.price === 'number'
+                    ? p.price
+                    : Number(String(p.price ?? '').replace(',', '.')) || 0,
+                )}
+              </div>
+            )}
+            {p.category ? (
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                Categoria: {p.category}
+              </div>
+            ) : null}
           </header>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-            <Link to={`/product/${p.id}`} className="btn" style={{ textAlign: 'center', flex: 1 }}>
-              Ver detalhes
-            </Link>
-            <button
-              className="btn"
-              onClick={() => {
-                // mapeia com segurança (string→number)
-                const price =
-                  typeof p.price === 'number' ? p.price : Number(String(p.price).replace(',', '.')) || 0;
+            <button className="btn" onClick={() => onDetails(p.id)}>
+              Ver Detalhes
+            </button>
 
-                add(
-                  {
-                    productId: p.id,
-                    name: p.name ?? `Produto ${p.id}`,
-                    price,
-                    imageUrl: p.imageUrl ?? p.imageUrl ?? null,
-                  },
-                  1
-                );
-              }}
-            >
+            <button className="btn" onClick={() => onAdd(p)}>
               Adicionar
             </button>
 
-
             {/* Ações de admin */}
             {isAdmin && (
-              <div style={{ display: 'flex', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  flex: 1,
+                  justifyContent: 'flex-end',
+                }}
+              >
                 {/* Editar (lápis) */}
                 <button
                   className="btn"
@@ -333,7 +397,7 @@ function Grid({
                 >
                   <PencilIcon />
                 </button>
-                
+
                 {/* Excluir (X vermelho) */}
                 <button
                   className="btn"
@@ -354,7 +418,6 @@ function Grid({
                 </button>
               </div>
             )}
-
           </div>
         </article>
       ))}
@@ -376,13 +439,23 @@ function Pagination({
 
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <button className="btn" onClick={() => canPrev && setPage(page - 1)} disabled={!canPrev} aria-label="Página anterior">
+      <button
+        className="btn"
+        onClick={() => canPrev && setPage(page - 1)}
+        disabled={!canPrev}
+        aria-label="Página anterior"
+      >
         ◀
       </button>
       <span style={{ minWidth: 120, textAlign: 'center' }}>
         Página {page} de {totalPages}
       </span>
-      <button className="btn" onClick={() => canNext && setPage(page + 1)} disabled={!canNext} aria-label="Próxima página">
+      <button
+        className="btn"
+        onClick={() => canNext && setPage(page + 1)}
+        disabled={!canNext}
+        aria-label="Próxima página"
+      >
         ▶
       </button>
     </div>
