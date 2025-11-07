@@ -1,13 +1,23 @@
-import { Link } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { useCart } from '@/app/cart/useCart';
+import { useCheckoutFromCart } from '@/features/orders/hooks';
+import { useAuth } from '@/features/auth/store';
 
 function brl(n: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n || 0);
 }
 
 export default function CartPage() {
-  const { state, inc, dec, setQty, remove, clear, totalItems, subtotal, freight, total } = useCart();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { state, inc, dec, setQty, remove, clear, totalItems, subtotal, freight } = useCart();
+  const checkoutMut = useCheckoutFromCart();
+
+  // customerId: tenta pegar do usuário (se você salvou isso no login), senão permite digitar
+  const [customerId, setCustomerId] = useState<number | ''>(
+    typeof (user as any)?.customerId === 'number' ? (user as any).customerId : ''
+  );
 
   // cupom simples no front
   const [coupon, setCoupon] = useState<string>('');
@@ -20,6 +30,37 @@ export default function CartPage() {
   }, [coupon, subtotal, freight]);
 
   const grandTotal = Math.max(0, subtotal + freight - couponDiscount);
+
+  async function handleCheckout() {
+    try {
+      if (!state.items.length) {
+        alert('Seu carrinho está vazio.');
+        return;
+      }
+      const cid = Number(customerId);
+      if (!Number.isFinite(cid) || cid <= 0) {
+        alert('Informe um Customer ID válido para finalizar.');
+        return;
+      }
+
+      const payload = {
+        customerId: cid,
+        status: 'ABERTO', // ou 'AGUARDANDO_PAGAMENTO'
+        items: state.items.map((it) => ({
+          productId: it.productId,
+          qty: it.qty,
+          unitPrice: it.price,
+        })),
+      };
+
+      const order = await checkoutMut.mutateAsync(payload);
+      clear(); // limpa carrinho
+      navigate(`/orders/${order.id}`); // vai para o detalhe do pedido recém-criado
+    } catch (err: any) {
+      console.error('Checkout falhou', err);
+      alert(err?.response?.data?.message || err?.message || 'Falha ao finalizar compra.');
+    }
+  }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -91,6 +132,19 @@ export default function CartPage() {
 
           {/* Resumo */}
           <aside className="card" style={{ display: 'grid', gap: 12, alignSelf: 'start' }}>
+            {/* Customer ID */}
+            <div style={{ display: 'grid', gap: 6 }}>
+              <label style={{ fontSize: 12, opacity: 0.8 }}>Customer ID</label>
+              <input
+                type="number"
+                min={1}
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : '')}
+                placeholder="Ex.: 1"
+                style={{ border: '1px solid var(--muted)', borderRadius: 8, padding: '8px 10px', background: 'var(--soft)', color: 'var(--fg)' }}
+              />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Itens</span>
               <strong>{totalItems}</strong>
@@ -104,31 +158,46 @@ export default function CartPage() {
               <strong>{freight === 0 ? 'Grátis' : brl(freight)}</strong>
             </div>
 
-            {/* Cupom */}
+            {/* Cupom simples (somente front) */}
             <div style={{ borderTop: '1px dashed var(--muted)', paddingTop: 12, display: 'grid', gap: 8 }}>
               <label style={{ fontSize: 12, opacity: 0.8 }}>Cupom</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                  placeholder="FIRST10 ou FRETEGRATIS"
-                  style={{ flex: 1, border: '1px solid var(--muted)', borderRadius: 8, padding: '8px 10px', background: 'var(--soft)', color: 'var(--fg)' }}
-                />
-              </div>
-              {couponDiscount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success,#16a34a)' }}>
-                  <span>Desconto</span>
-                  <strong>-{brl(couponDiscount)}</strong>
-                </div>
+              <input
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+                placeholder="FIRST10 ou FRETEGRATIS"
+                style={{ border: '1px solid var(--muted)', borderRadius: 8, padding: '8px 10px', background: 'var(--soft)', color: 'var(--fg)' }}
+              />
+              {/* Desconto exibido, mas não enviado ao back (por ora) */}
+              {coupon && (
+                <small style={{ opacity: 0.7 }}>
+                  * Desconto aplicado no front. Integração com back pode ser feita depois.
+                </small>
               )}
             </div>
 
             <div style={{ borderTop: '1px dashed var(--muted)', paddingTop: 12, display: 'flex', justifyContent: 'space-between' }}>
               <span>Total</span>
-              <strong style={{ fontSize: 18 }}>{brl(grandTotal)}</strong>
+              <strong style={{ fontSize: 18 }}>
+                {brl(Math.max(0, subtotal + freight /* - desconto back, se houver */))}
+              </strong>
             </div>
 
-            <button className="btn" disabled title="Em breve">Finalizar compra</button>
+            <button
+              className="btn"
+              onClick={handleCheckout}
+              disabled={checkoutMut.isPending || !state.items.length || !customerId}
+              title={!customerId ? 'Informe um Customer ID' : undefined}
+              style={{
+                background: 'var(--primary,#2563eb)',
+                borderColor: 'var(--primary,#2563eb)',
+                color: '#fff',
+                opacity: checkoutMut.isPending ? 0.7 : 1,
+              }}
+            >
+              {checkoutMut.isPending ? 'Finalizando…' : 'Finalizar compra'}
+            </button>
+
+            <Link to="/orders" className="btn">Ver meus pedidos</Link>
           </aside>
         </div>
       )}

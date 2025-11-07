@@ -1,44 +1,39 @@
+// src/features/orders/hooks.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  listOrders,
-  getOrder,
+  getOrders,
+  getOrderById,
   createOrder,
   updateOrder,
   deleteOrderApi,
-  type Order,
+  createOrderFromCart,
   type OrderInput,
   type OrderQuery,
-  type Paged,
 } from './api';
 
-const ordersKey = (q?: OrderQuery) => [
-  'orders',
-  q?.page ?? 1,
-  q?.limit ?? 12,
-  q?.search ?? '',
-  q?.status ?? '',
-];
-const orderKey = (id: number | string) => ['order', id];
+// chaves estáveis (boas para cache)
+const ordersKey = (q?: OrderQuery) => ['orders', q] as const;
+const orderKey = (id: number | string) => ['order', id] as const;
 
-/* ===== Queries ===== */
+/* ========== QUERIES ========== */
 
-export function useOrders(query: OrderQuery) {
-  return useQuery<Paged<Order>>({
-    queryKey: ordersKey(query),
-    queryFn: () => listOrders(query),
-    keepPreviousData: true,
+export function useOrders(q: OrderQuery) {
+  return useQuery({
+    queryKey: ordersKey(q),
+    queryFn: () => getOrders(q),
   });
 }
 
-export function useOrder(id?: string | number) {
-  return useQuery<Order>({
-    enabled: !!id,
-    queryKey: id ? orderKey(id) : ['order', 'none'],
-    queryFn: () => getOrder(id!),
+export function useOrder(id: number | string) {
+  const numOk = typeof id === 'number' ? Number.isFinite(id) : !!id;
+  return useQuery({
+    queryKey: orderKey(id),
+    enabled: numOk,
+    queryFn: () => getOrderById(id),
   });
 }
 
-/* ===== Mutations ===== */
+/* ========== MUTATIONS ========== */
 
 export function useCreateOrder() {
   const qc = useQueryClient();
@@ -66,8 +61,21 @@ export function useDeleteOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteOrderApi(id),
-    onSuccess: () => {
+    onSuccess: (_status, id) => {
       qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: orderKey(id) });
+    },
+  });
+}
+
+/** Checkout do carrinho → cria pedido + itens e atualiza caches */
+export function useCheckoutFromCart() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createOrderFromCart,
+    onSuccess: (order) => {
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: orderKey(order.id) });
     },
   });
 }
