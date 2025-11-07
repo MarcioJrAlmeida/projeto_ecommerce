@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ProductInput } from './api';
+import type { ProductInput } from '../api';
 
 export function ProductForm({
   title,

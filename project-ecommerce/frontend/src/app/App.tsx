@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import AppRoutes from './routes';
 import QueryProvider from './providers/Query';
 import { ThemeProvider } from './providers/Theme';
+import { CartProvider } from './cart/CartContext'; // ⬅️ novo import
+
 
 function Shell() {
   const year = useMemo(() => new Date().getFullYear(), []);
@@ -32,7 +34,9 @@ export default function App() {
   return (
     <QueryProvider>
       <ThemeProvider>
-        <Shell />
+        <CartProvider> {/* ⬅️ novo wrapper */}
+          <AppRoutes />
+        </CartProvider>
       </ThemeProvider>
     </QueryProvider>
   );

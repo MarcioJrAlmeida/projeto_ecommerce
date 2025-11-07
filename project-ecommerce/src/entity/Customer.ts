@@ -15,7 +15,10 @@ export class Customer {
   @Column({ length: 20, nullable: true })
   phone?: string;
 
-  @OneToMany(() => Address, (a) => a.customer)
+  @Column({ name: 'password_hash', nullable: true, select: false })
+  passwordHash?: string; // ⬅️ NOVO (select:false para não retornar por padrão)
+
+  @OneToMany(() => Address, (a) => a.customer, { cascade: true })
   addresses: Address[];
 
   @CreateDateColumn()

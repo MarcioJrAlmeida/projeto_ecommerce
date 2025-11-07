@@ -12,15 +12,58 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OrdersService = void 0;
-const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
+exports.OrderService = exports.OrdersService = void 0;
+const typeorm_1 = require("typeorm");
 const Order_1 = require("../../entity/Order");
+const common_1 = require("@nestjs/common");
+const typeorm_2 = require("@nestjs/typeorm");
 const OrderItem_1 = require("../../entity/OrderItem");
 const Product_1 = require("../../entity/Product");
 const Customer_1 = require("../../entity/Customer");
 let OrdersService = class OrdersService {
+    constructor(repo) {
+        this.repo = repo;
+    }
+    baseQB() {
+        return this.repo
+            .createQueryBuilder('o')
+            .leftJoinAndSelect('o.customer', 'customer')
+            .leftJoinAndSelect('o.items', 'items')
+            .leftJoinAndSelect('items.product', 'product');
+    }
+    async findAll(params) {
+        const page = Math.max(1, params.page ?? 1);
+        const limit = Math.max(1, Math.min(100, params.limit ?? 12));
+        const qb = this.baseQB();
+        if (params.customerId) {
+            qb.andWhere('o.customerId = :cid', { cid: params.customerId });
+        }
+        if (params.status) {
+            qb.andWhere('o.status = :status', { status: params.status });
+        }
+        if (params.search) {
+            const s = `%${params.search.toLowerCase()}%`;
+            qb.andWhere('(LOWER(o.code) LIKE :s OR LOWER(customer.name) LIKE :s OR LOWER(customer.email) LIKE :s)', { s });
+        }
+        qb.orderBy('o.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+        const [rows, total] = await qb.getManyAndCount();
+        return {
+            items: rows,
+            total,
+            page,
+            limit,
+        };
+    }
+};
+exports.OrdersService = OrdersService;
+exports.OrdersService = OrdersService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_2.InjectRepository)(Order_1.Order)),
+    __metadata("design:paramtypes", [typeorm_1.Repository])
+], OrdersService);
+let OrderService = class OrderService {
     constructor(orders, items, products, customers, ds) {
         this.orders = orders;
         this.items = items;
@@ -47,11 +90,9 @@ let OrdersService = class OrdersService {
         const product = await this.products.findOne({ where: { id: dto.productId } });
         if (!product)
             throw new common_1.NotFoundException('Product not found');
-        // regra: não permitir adicionar com estoque insuficiente (verifica contra a qtd desejada)
         if (product.stock < dto.quantity) {
             throw new common_1.BadRequestException('Insufficient stock for product');
         }
-        // se já existe item do mesmo produto, apenas soma quantidade
         let item = await this.items.findOne({ where: { order: { id: order.id }, product: { id: product.id } }, relations: ['order', 'product'] });
         const unitPrice = product.price; // string decimal
         if (item) {
@@ -87,10 +128,10 @@ let OrdersService = class OrdersService {
         await this.recalcTotals(order.id);
         return this.get(order.id);
     }
-    async removeItem(orderId, itemId) {
+    async removeItem(orderId) {
         const order = await this.getOrThrow(orderId);
         this.ensureEditable(order);
-        const res = await this.items.delete({ id: itemId, order: { id: order.id } });
+        const res = await this.items.delete({ order: { id: order.id } });
         if (!res.affected)
             throw new common_1.NotFoundException('Item not found');
         await this.recalcTotals(order.id);
@@ -174,17 +215,16 @@ let OrdersService = class OrdersService {
             throw new common_1.BadRequestException('Canceled order cannot be edited');
     }
 };
-exports.OrdersService = OrdersService;
-exports.OrdersService = OrdersService = __decorate([
-    (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(Order_1.Order)),
-    __param(1, (0, typeorm_1.InjectRepository)(OrderItem_1.OrderItem)),
-    __param(2, (0, typeorm_1.InjectRepository)(Product_1.Product)),
-    __param(3, (0, typeorm_1.InjectRepository)(Customer_1.Customer)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.DataSource])
-], OrdersService);
+exports.OrderService = OrderService;
+exports.OrderService = OrderService = __decorate([
+    __param(0, (0, typeorm_2.InjectRepository)(Order_1.Order)),
+    __param(1, (0, typeorm_2.InjectRepository)(OrderItem_1.OrderItem)),
+    __param(2, (0, typeorm_2.InjectRepository)(Product_1.Product)),
+    __param(3, (0, typeorm_2.InjectRepository)(Customer_1.Customer)),
+    __metadata("design:paramtypes", [typeorm_1.Repository,
+        typeorm_1.Repository,
+        typeorm_1.Repository,
+        typeorm_1.Repository,
+        typeorm_1.DataSource])
+], OrderService);
 //# sourceMappingURL=orders.service.js.map

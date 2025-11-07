@@ -14,14 +14,21 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersController = void 0;
 const common_1 = require("@nestjs/common");
-const orders_service_1 = require("./orders.service");
 const order_dto_1 = require("../../dto/order.dto");
+const orders_service_1 = require("./orders.service");
 let OrdersController = class OrdersController {
-    constructor(service) {
+    constructor(ordersService, service) {
+        this.ordersService = ordersService;
         this.service = service;
     }
-    list() {
-        return this.service.list();
+    async findAll(page, limit, status, search, customerId) {
+        return this.ordersService.findAll({
+            page: page ? Number(page) : 1,
+            limit: limit ? Number(limit) : 12,
+            status: status || undefined,
+            search: search || undefined,
+            customerId: customerId ? Number(customerId) : undefined, // 👈 aplica filtro
+        });
     }
     get(id) {
         return this.service.get(id);
@@ -35,8 +42,8 @@ let OrdersController = class OrdersController {
     updateItem(orderId, itemId, dto) {
         return this.service.updateItem(orderId, itemId, dto);
     }
-    removeItem(orderId, itemId) {
-        return this.service.removeItem(orderId, itemId);
+    removeItem(orderId) {
+        return this.service.removeItem(orderId);
     }
     changeStatus(id, dto) {
         return this.service.setStatus(id, dto.status);
@@ -48,10 +55,15 @@ let OrdersController = class OrdersController {
 exports.OrdersController = OrdersController;
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('search')),
+    __param(4, (0, common_1.Query)('customerId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], OrdersController.prototype, "list", null);
+    __metadata("design:paramtypes", [String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -84,11 +96,10 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "updateItem", null);
 __decorate([
-    (0, common_1.Delete)(':orderId/items/:itemId'),
+    (0, common_1.Delete)(':id/items/'),
     __param(0, (0, common_1.Param)('orderId', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Param)('itemId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "removeItem", null);
 __decorate([
@@ -108,6 +119,7 @@ __decorate([
 ], OrdersController.prototype, "pay", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
-    __metadata("design:paramtypes", [orders_service_1.OrdersService])
+    __metadata("design:paramtypes", [orders_service_1.OrdersService,
+        orders_service_1.OrderService])
 ], OrdersController);
 //# sourceMappingURL=orders.controller.js.map

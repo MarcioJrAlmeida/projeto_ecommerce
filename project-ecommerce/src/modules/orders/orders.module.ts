@@ -4,12 +4,12 @@ import { Order } from '../../entity/Order';
 import { OrderItem } from '../../entity/OrderItem';
 import { Product } from '../../entity/Product';
 import { Customer } from '../../entity/Customer';
-import { OrdersService } from './orders.service';
+import { OrdersService, OrderService } from './orders.service';
 import { OrdersController } from './orders.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, Customer])],
-  providers: [OrdersService],
+  providers: [OrdersService, OrderService],
   controllers: [OrdersController],
 })
 export class OrdersModule {}

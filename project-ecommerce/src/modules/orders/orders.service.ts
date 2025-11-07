@@ -1,14 +1,73 @@
+import { Repository, SelectQueryBuilder, DataSource } from 'typeorm';
+import { Order } from '../../entity/Order';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { Order } from '../../entity/Order';
 import { OrderItem } from '../../entity/OrderItem';
 import { Product } from '../../entity/Product';
 import { Customer } from '../../entity/Customer';
 import { AddItemDto, CreateOrderDto, UpdateItemDto } from '../../dto/order.dto';
 
+type FindAllParams = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+  customerId?: number; // 👈 filtro por usuário
+};
+
 @Injectable()
 export class OrdersService {
+  constructor(
+    @InjectRepository(Order) private readonly repo: Repository<Order>,
+  ) {}
+
+  private baseQB(): SelectQueryBuilder<Order> {
+    return this.repo
+      .createQueryBuilder('o')
+      .leftJoinAndSelect('o.customer', 'customer')
+      .leftJoinAndSelect('o.items', 'items')
+      .leftJoinAndSelect('items.product', 'product');
+  }
+
+  async findAll(params: FindAllParams) {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.max(1, Math.min(100, params.limit ?? 12));
+
+    const qb = this.baseQB();
+
+    
+    if (params.customerId) {
+      
+      qb.andWhere('o.customerId = :cid', { cid: params.customerId });
+    }
+
+    if (params.status) {
+      qb.andWhere('o.status = :status', { status: params.status });
+    }
+
+    if (params.search) {
+      const s = `%${params.search.toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(o.code) LIKE :s OR LOWER(customer.name) LIKE :s OR LOWER(customer.email) LIKE :s)',
+        { s },
+      );
+    }
+
+    qb.orderBy('o.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [rows, total] = await qb.getManyAndCount();
+
+    return {
+      items: rows,
+      total,
+      page,
+      limit,
+    };
+  }
+}
+export class OrderService {
   constructor(
     @InjectRepository(Order) private orders: Repository<Order>,
     @InjectRepository(OrderItem) private items: Repository<OrderItem>,
@@ -39,12 +98,12 @@ export class OrdersService {
     const product = await this.products.findOne({ where: { id: dto.productId } });
     if (!product) throw new NotFoundException('Product not found');
 
-    // regra: não permitir adicionar com estoque insuficiente (verifica contra a qtd desejada)
+
     if (product.stock < dto.quantity) {
       throw new BadRequestException('Insufficient stock for product');
     }
 
-    // se já existe item do mesmo produto, apenas soma quantidade
+
     let item = await this.items.findOne({ where: { order: { id: order.id }, product: { id: product.id } }, relations: ['order','product'] });
     const unitPrice = product.price; // string decimal
     if (item) {
@@ -83,11 +142,11 @@ export class OrdersService {
     return this.get(order.id);
   }
 
-  async removeItem(orderId: number, itemId: number) {
+  async removeItem(orderId: number) {
     const order = await this.getOrThrow(orderId);
     this.ensureEditable(order);
 
-    const res = await this.items.delete({ id: itemId, order: { id: order.id } });
+    const res = await this.items.delete({order: { id: order.id } });
     if (!res.affected) throw new NotFoundException('Item not found');
     await this.recalcTotals(order.id);
     return this.get(order.id);

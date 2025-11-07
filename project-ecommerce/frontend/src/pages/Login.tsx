@@ -55,8 +55,9 @@ export default function Login() {
           {submitting ? 'Entrando…' : 'Entrar'}
         </button>
 
-        <div style={{ textAlign: 'center', fontSize: 12 }}>
+        <div style={{ display: 'grid', gap: 8, textAlign: 'center', fontSize: 12 }}>
           <Link to="/">← Voltar</Link>
+          <Link to="/register">Ainda não tem conta? Criar conta</Link>
         </div>
       </form>
     </div>
