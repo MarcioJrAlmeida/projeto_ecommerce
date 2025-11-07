@@ -42,4 +42,4 @@ __decorate([
     (0, class_validator_1.MaxLength)(72),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
-//# sourceMappingURL=customer.dto.js.map
+//# sourceMappingURL=register.dto.js.map

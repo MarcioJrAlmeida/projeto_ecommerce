@@ -32,7 +32,11 @@ __decorate([
     __metadata("design:type", String)
 ], Customer.prototype, "phone", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => Address_1.Address, (a) => a.customer),
+    (0, typeorm_1.Column)({ name: 'password_hash', nullable: true, select: false }),
+    __metadata("design:type", String)
+], Customer.prototype, "passwordHash", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Address_1.Address, (a) => a.customer, { cascade: true }),
     __metadata("design:type", Array)
 ], Customer.prototype, "addresses", void 0);
 __decorate([

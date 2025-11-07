@@ -22,6 +22,8 @@ const UsersPage = lazy(() => import('@/pages/Users')); // ⬅️ NOVO
 const OrdersPage = lazy(() => import('@/pages/Orders'));        // se já existir
 const OrderDetailsPage = lazy(() => import('@/pages/OrderDetails')); // ⬅️ NOVO
 const Cart = lazy(() => import('@/pages/Cart')); // ⬅️ troque o placeholder anterior
+const Register = lazy(() => import('@/pages/Register'));
+
 
 
 
@@ -207,6 +209,7 @@ const router = createBrowserRouter([
       { path: '*', element: <NotFound /> },
       { path: '/orders', element: <OrdersPage /> },           // se ainda não estiver
       { path: '/orders/:id', element: <OrderDetailsPage /> }, // ⬅️ NOVA ROTA
+      { path: '/register', element: <Register /> },
       
 
     ],
