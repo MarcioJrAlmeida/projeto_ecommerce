@@ -11,13 +11,17 @@ import {
   type Paged,
 } from './api';
 
+/* chaves de cache */
 const usersKey = (q?: UserQuery) => [
   'users',
   q?.page ?? 1,
   q?.limit ?? 12,
   q?.search ?? '',
-];
-const userKey = (id: number | string) => ['user', id];
+] as const;
+
+const userKey = (id: number | string) => ['user', id] as const;
+
+/* ---------- Queries ---------- */
 
 export function useUsers(query: UserQuery) {
   return useQuery<Paged<User>>({
@@ -27,13 +31,19 @@ export function useUsers(query: UserQuery) {
   });
 }
 
+/** Alias para compatibilidade com “useCustomers” mencionado antes */
+export const useCustomers = useUsers;
+
 export function useUser(id?: string | number) {
+  const enabled = id !== undefined && id !== null && `${id}`.length > 0;
   return useQuery<User>({
-    enabled: !!id,
-    queryKey: id ? userKey(id) : ['user', 'none'],
-    queryFn: () => getUser(id!),
+    enabled,
+    queryKey: enabled ? userKey(id as number | string) : ['user', 'none'],
+    queryFn: () => getUser(id as number | string),
   });
 }
+
+/* ---------- Mutations ---------- */
 
 export function useCreateUser() {
   const qc = useQueryClient();
