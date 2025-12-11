@@ -9,23 +9,43 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegisterDto = void 0;
+exports.UpdateUserDto = exports.CreateUserDto = void 0;
+// src/users/dto/user.dto.ts
 const class_validator_1 = require("class-validator");
-class RegisterDto {
+class CreateUserDto {
 }
-exports.RegisterDto = RegisterDto;
+exports.CreateUserDto = CreateUserDto;
 __decorate([
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
-], RegisterDto.prototype, "email", void 0);
+], CreateUserDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
-], RegisterDto.prototype, "password", void 0);
+], CreateUserDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsIn)(['admin', 'cliente']),
     __metadata("design:type", String)
-], RegisterDto.prototype, "role", void 0);
-//# sourceMappingURL=register.dto.js.map
+], CreateUserDto.prototype, "role", void 0);
+class UpdateUserDto {
+}
+exports.UpdateUserDto = UpdateUserDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(6),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['admin', 'cliente']),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "role", void 0);
+//# sourceMappingURL=user.dto.js.map

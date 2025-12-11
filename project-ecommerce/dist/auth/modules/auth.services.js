@@ -8,51 +8,52 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const Customer_1 = require("../../entity/Customer");
-const Address_1 = require("../../entity/Address");
+const bcrypt = require("bcrypt");
+const jwt_1 = require("@nestjs/jwt");
+const users_service_1 = require("../../modules/users/users.service");
 let AuthService = class AuthService {
-    constructor(customersRepo, addressRepo) {
-        this.customersRepo = customersRepo;
-        this.addressRepo = addressRepo;
+    constructor(usersService, jwt) {
+        this.usersService = usersService;
+        this.jwt = jwt;
     }
+    /** Registro de usuário (cliente ou admin) */
     async register(dto) {
-        const exists = await this.customersRepo.findOne({ where: { email: dto.email } });
-        if (exists)
-            throw new common_1.ConflictException('E-mail já cadastrado.');
-        // const passwordHash = await bcrypt.hash(dto.password, 10);
-        const customer = this.customersRepo.create({
-            name: dto.name,
-            email: dto.email,
-            phone: dto.phone,
-            // passwordHash,
-        });
-        const saved = await this.customersRepo.save(customer);
-        if (dto.address) {
-            const address = this.addressRepo.create({
-                customer: saved,
-                line1: dto.address, // ajuste para os campos reais da sua Address
-            });
-            await this.addressRepo.save(address);
+        // já existe?
+        const existing = await this.usersService.findByEmail(dto.email);
+        if (existing) {
+            throw new common_1.ConflictException('Email já cadastrado');
         }
-        // Evita vazar o hash
-        const { passwordHash: _ph, ...safe } = saved;
-        return safe;
+        // delega criação para UsersService (ele já faz hash da senha)
+        const created = await this.usersService.create({
+            email: dto.email,
+            password: dto.password,
+            role: dto.role ?? 'cliente',
+        });
+        // gera um token já logado
+        const payload = { sub: created.id, email: created.email, role: created.role };
+        const access_token = await this.jwt.signAsync(payload);
+        return { access_token };
+    }
+    /** Login com email + senha */
+    async login(dto) {
+        const user = await this.usersService.findByEmail(dto.email);
+        if (!user)
+            throw new common_1.UnauthorizedException('Credenciais inválidas');
+        const ok = await bcrypt.compare(dto.password, user.password);
+        if (!ok)
+            throw new common_1.UnauthorizedException('Credenciais inválidas');
+        const payload = { sub: user.id, email: user.email, role: user.role };
+        const access_token = await this.jwt.signAsync(payload);
+        return { access_token };
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(Customer_1.Customer)),
-    __param(1, (0, typeorm_1.InjectRepository)(Address_1.Address)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+    __metadata("design:paramtypes", [users_service_1.UsersService,
+        jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.services.js.map
