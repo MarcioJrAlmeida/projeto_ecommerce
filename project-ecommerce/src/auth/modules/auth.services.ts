@@ -1,43 +1,51 @@
-import { Injectable, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Customer } from '../../entity/Customer';
-import { Address } from '../../entity/Address';
+import { JwtService } from '@nestjs/jwt';
+import { LoginDto } from '../dto/login.dto';
+import { UsersService } from '../../modules/users/users.service';
+import { User } from '../../entity/Users';
 import { RegisterDto } from '../dto/register.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(Customer) private readonly customersRepo: Repository<Customer>,
-    @InjectRepository(Address) private readonly addressRepo: Repository<Address>,
+    private readonly usersService: UsersService,
+    private readonly jwt: JwtService,
   ) {}
 
+  /** Registro de usuário (cliente ou admin) */
   async register(dto: RegisterDto) {
-    const exists = await this.customersRepo.findOne({ where: { email: dto.email } });
-    if (exists) throw new ConflictException('E-mail já cadastrado.');
-
-    // const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    const customer = this.customersRepo.create({
-      name: dto.name,
-      email: dto.email,
-      phone: dto.phone,
-      // passwordHash,
-    });
-
-    const saved = await this.customersRepo.save(customer);
-
-    if (dto.address) {
-      const address = this.addressRepo.create({
-        customer: saved,
-        line1: dto.address, // ajuste para os campos reais da sua Address
-      } as any);
-      await this.addressRepo.save(address);
+    // já existe?
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('Email já cadastrado');
     }
 
-    // Evita vazar o hash
-    const { passwordHash: _ph, ...safe } = saved;
-    return safe;
+    // delega criação para UsersService (ele já faz hash da senha)
+    const created = await this.usersService.create({
+      email: dto.email,
+      password: dto.password,
+      role: dto.role ?? 'cliente',
+    });
+
+    // gera um token já logado
+    const payload = { sub: created.id, email: created.email, role: created.role };
+    const access_token = await this.jwt.signAsync(payload);
+
+    return { access_token };
+  }
+
+  /** Login com email + senha */
+  async login(dto: LoginDto) {
+    const user: User | null = await this.usersService.findByEmail(dto.email);
+    if (!user) throw new UnauthorizedException('Credenciais inválidas');
+
+    const ok = await bcrypt.compare(dto.password, user.password);
+    if (!ok) throw new UnauthorizedException('Credenciais inválidas');
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const access_token = await this.jwt.signAsync(payload);
+
+    return { access_token };
   }
 }

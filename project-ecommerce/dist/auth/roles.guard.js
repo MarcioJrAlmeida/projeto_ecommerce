@@ -9,23 +9,25 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegisterDto = void 0;
-const class_validator_1 = require("class-validator");
-class RegisterDto {
-}
-exports.RegisterDto = RegisterDto;
-__decorate([
-    (0, class_validator_1.IsEmail)(),
-    __metadata("design:type", String)
-], RegisterDto.prototype, "email", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6),
-    __metadata("design:type", String)
-], RegisterDto.prototype, "password", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsIn)(['admin', 'cliente']),
-    __metadata("design:type", String)
-], RegisterDto.prototype, "role", void 0);
-//# sourceMappingURL=register.dto.js.map
+exports.RolesGuard = void 0;
+const common_1 = require("@nestjs/common");
+const core_1 = require("@nestjs/core");
+let RolesGuard = class RolesGuard {
+    constructor(reflector) {
+        this.reflector = reflector;
+    }
+    canActivate(ctx) {
+        const roles = this.reflector.get('roles', ctx.getHandler());
+        if (!roles || roles.length === 0)
+            return true;
+        const req = ctx.switchToHttp().getRequest();
+        const user = req.user;
+        return roles.includes(user?.role);
+    }
+};
+exports.RolesGuard = RolesGuard;
+exports.RolesGuard = RolesGuard = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [core_1.Reflector])
+], RolesGuard);
+//# sourceMappingURL=roles.guard.js.map
